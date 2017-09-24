@@ -6,7 +6,7 @@
 var debug = require('debug')('custom.worker.event');
 
 //var db = require('../../lib/database');
-var model = require('../models/artist');
+var model = require('./models/artist');
 
 module.exports.start = (json) => {
 	return new Promise((resolve, reject) => {

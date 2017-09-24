@@ -14,6 +14,20 @@ var wArtist = require('./artist');
 var mongoose = require('mongoose');
 mongoose.Promise = require('bluebird');
 
+var mongoose = require('mongoose');
+mongoose.connect('mongodb://localhost:27017/ScrapperEvents');
+mongoose.Promise = require('bluebird');
+var Artist = mongoose.model('Artist', {
+	name: String,
+	logo: String,
+	events: []
+});
+var Url = mongoose.model('Url', {
+	url: String,
+	status: Number,
+	date: Date
+});
+
 module.exports.scrapPattern = [/^\/artists\/.+/];
 
 module.exports.isAlreadyScrapped = (url) => {

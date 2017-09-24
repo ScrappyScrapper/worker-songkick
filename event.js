@@ -8,7 +8,7 @@
 
 'use strict';
 
-var model = require('../models/artist');
+var model = require('./models/artist');
 var debug = require('debug')('custom.worker.event');
 
 module.exports.start = (artist, data) => {
