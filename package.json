@@ -1,0 +1,25 @@
+{
+  "name": "worker-songkick",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ScrappyScrapper/worker-songkick.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ScrappyScrapper/worker-songkick/issues"
+  },
+  "homepage": "https://github.com/ScrappyScrapper/worker-songkick#readme",
+  "dependencies": {
+    "bluebird": "^3.5.0",
+    "debug": "^3.0.1",
+    "md5": "^2.2.1",
+    "mongoose": "^4.11.12"
+  }
+}
