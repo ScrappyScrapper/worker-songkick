@@ -15,73 +15,74 @@ initMongo();
 
 module.exports.scrapPattern = [/^\/artists\/.+/];
 
+/**
+ *
+ * @param url
+ * @returns {Promise}
+ */
 module.exports.isAlreadyScrapped = (url) => {
 	return new Promise((resolve, reject) => {
-		Url.findOne({url: url}).exec()
-			.then((doc) => {
-				if(doc.status === 2) {
-					resolve();
-				}
-				else {
-					reject();
-				}
-			})
-			.catch(() => {
-				let u = new Url({
-					url: url,
-					status: 1,
-					date: Date.now()
-				});
-				u.save().catch((err) => lError(err));
+		Url.findOne({url: url}, function(err, doc) {
+			if (err) {
+				lError(err);
 				reject();
-			});
+			}
+
+			if (!doc) {
+				let u = new Url({url: url, status: 1, date: Date.now()});
+				u.save(function(err) {
+					if (err) {
+						lError(err);
+					}
+				});
+				reject('Url is not scrapping');
+			} else {
+				resolve('Url is already scrapped');
+			}
+		});
 	});
 };
 
-module.exports.start = (url, $) => {
+module.exports.start = function(url, $) {
 	lDebug("Custom start from %s", url);
 	let data = {
 		"events": []
 	};
 
 	let promises = [];
-	$('.microformat').each(function() {
-		let json = JSON.parse($(this).find('script').html());
-		json.forEach(function (value) {
-			if (value['@type'] !== undefined) {
-				if(value['@type'] === 'MusicGroup') {
-					promises.push(new Promise((resolve, reject) => {
-						data['name'] = value.name;
-						data['logo'] = value.logo;
-						resolve();
-					}));
-				}
-				else if(value['@type'] === 'MusicEvent') {
-					promises.push(new Promise((resolve, reject) => {
-						let hash = generateHash(value);
 
-						data.events.push({
-							"hash": hash,
-							"location": {
-								"name": value.location.name,
-								"address": value.location.address.streetAddress,
-								"cp": value.location.address.postalCode,
-								"city": value.location.address.addressLocality,
-								"country": value.location.address.addressCountry,
-								"latitude": value.location.geo !== undefined ? value.location.geo.latitude : 0,
-								"longitude": value.location.geo !== undefined ? value.location.geo.longitude : 0
-							},
-							"startDate": value.startDate,
-						});
-						resolve();
-					}));
+	promises.push(new Promise((resolve, reject) => {
+		$('.microformat').each(function() {
+			let json = JSON.parse($(this).find('script').html());
+			json.forEach(function (value) {
+				if (value['@type'] !== undefined) {
+					if(value['@type'] === 'MusicGroup') {
+						Object.assign(data,checkArtist(value));
+					}
+					else if(value['@type'] === 'MusicEvent') {
+						data['events'].push(checkEvent(value));
+					}
 				}
+			});
+		});
+		resolve();
+		resolve();
+	}));
+
+	promises.push(new Promise((resolve, reject) => {
+		let Url = mongoose.model('Url');
+		Url.findOneAndUpdate({url: url}, {status:2}, {new:true}, function(err, doc) {
+			if (err) {
+				reject(err);
+			}
+
+			if(!doc) {
+				reject('Fail');
+			} else {
+				resolve();
 			}
 		});
-	});
-
-	let Url = mongoose.model('Url');
-	Url.findOneAndUpdate({url: url}, {status:2}, {new:true}).then().catch();
+	}));
 
 	Promise.all(promises)
 		.then(() => {
@@ -108,11 +109,36 @@ function generateHash(json) {
  * Initialize mongo database
  */
 function initMongo() {
-	mongoose.connect('mongodb://'+process.env.MONGO_HOST+'/ScrapperEvents');
-	mongoose.Promise = require('bluebird');
+	mongoose.connect('mongodb://'+process.env.MONGO_HOST+'/ScrapperEvents', {
+		useMongoClient: true
+	});
 	Url = mongoose.model('Url', {
 		url: String,
 		status: Number,
 		date: Date
 	});
+}
+
+function checkEvent(value) {
+	let hash = generateHash(value);
+	return {
+		"hash": hash,
+		"name": value.location.name,
+		"address": value.location.address.streetAddress,
+		"cp": value.location.address.postalCode,
+		"city": value.location.address.addressLocality,
+		"country": value.location.address.addressCountry,
+		"location": [
+			value.location.geo !== undefined ? value.location.geo.latitude : 0,
+			value.location.geo !== undefined ? value.location.geo.longitude : 0
+		],
+		"startDate": value.startDate,
+	};
+}
+
+function checkArtist(value) {
+	return {
+		'name': value.name,
+		'logo': value.logo,
+	};
 }
