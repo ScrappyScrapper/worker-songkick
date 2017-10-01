@@ -65,8 +65,7 @@ module.exports.start = function(url, $) {
 				}
 			});
 		});
-		resolve();
-		resolve();
+@		resolve();
 	}));
 
 	promises.push(new Promise((resolve, reject) => {
