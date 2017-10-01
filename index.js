@@ -15,6 +15,29 @@ initMongo();
 
 module.exports.scrapPattern = [/^\/artists\/.+/];
 
+module.exports.canScrapping = (url) => {
+	return new Promise((resolve, reject) => {
+		Url.findOne({url: url}, function(err, doc) {
+			if (err) {
+				lError(err);
+				reject();
+			}
+
+			if (!doc) {
+				let u = new Url({url: url, status: 1, date: Date.now()});
+				u.save(function(err) {
+					if (err) {
+						lError(err);
+					}
+				});
+				resolve('Url is not scrapping');
+			} else {
+				reject('Url is already scrapped');
+			}
+		});
+	});
+};
+
 /**
  *
  * @param url
@@ -65,7 +88,7 @@ module.exports.start = function(url, $) {
 				}
 			});
 		});
-@		resolve();
+		resolve();
 	}));
 
 	promises.push(new Promise((resolve, reject) => {
